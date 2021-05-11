@@ -1,17 +1,53 @@
 import discord
+from discord.ext import commands
+from secrets import *
+from os import environ
 
-client = discord.Client()
+
+intents = discord.Intents.all()
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    print(f'{client.user.name} has connected to Discord!')
 
 @client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+async def on_raw_reaction_add(payload):
+    message_id = payload.message_id
+    if message_id == 841402767871442994:
+        guild_id = payload.guild_id
+        guild = discord.utils.find(lambda g: g.id == guild_id, client.guilds)
+        role = discord.utils.get(guild.roles, name=payload.emoji.name)
 
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
+        if role is not None:
+            member = payload.member
+            if member is not None:
+                await member.add_roles(role)
+                print("Role added.")
+            else:
+                print("Member not found.")
+        else:
+            print("Role not found")
 
-client.run('your token here')
+@client.event
+async def on_raw_reaction_remove(payload):
+    message_id = payload.message_id
+    if message_id == 841402767871442994:
+        guild_id = payload.guild_id
+        guild = discord.utils.find(lambda g: g.id == guild_id, client.guilds)
+        role = discord.utils.get(guild.roles, name=payload.emoji.name)
+
+        if role is not None:
+            member = discord.utils.find(lambda m : m.id == payload.user_id, guild.members)
+            if member is not None:
+                await member.remove_roles(role)
+                print("Role removed.")
+            else:
+                print("Member not found.")
+        else:
+            print("Role not found")
+
+if "TOKEN" in globals():
+    client.run(TOKEN)
+else:
+    client.run(environ["TOKEN"])
